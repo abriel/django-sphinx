@@ -4,14 +4,11 @@ import time
 import struct
 import warnings
 import operator
-from . import apis.current as sphinxapi
+from .apis import current as sphinxapi
 import logging
 import re
 from functools import reduce
-try:
-    import decimal
-except ImportError:
-    from django.utils import _decimal as decimal # for Python 2.3
+import decimal
 
 from django.db.models.query import QuerySet, Q
 from django.conf import settings
