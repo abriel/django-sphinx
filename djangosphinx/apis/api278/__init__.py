@@ -203,7 +203,7 @@ class SphinxClient:
 			return
 
 		v = unpack('>L', sock.recv(4))
-		if v<1:
+		if v[0]<1:
 			sock.close()
 			self._error = 'expected searchd protocol version, got %s' % v
 			return
@@ -218,7 +218,7 @@ class SphinxClient:
 		INTERNAL METHOD, DO NOT CALL. Gets and checks response packet from searchd server.
 		"""
 		(status, ver, length) = unpack('>2HL', sock.recv(8))
-		response = ''
+		response = b''
 		left = length
 		while left>0:
 			chunk = sock.recv(left)
@@ -495,7 +495,7 @@ class SphinxClient:
 
 		if isinstance(query,str):
 			query = query.encode('utf-8')
-		assert(isinstance(query,str))
+		assert(isinstance(query,bytes))
 
 		req.append(pack('>L', len(query)))
 		req.append(query)
@@ -548,7 +548,7 @@ class SphinxClient:
 		# per-index weights
 		req.append ( pack ('>L',len(self._indexweights)))
 		for indx,weight in list(self._indexweights.items()):
-			req.append ( pack ('>L',len(indx)) + indx + pack ('>L',weight))
+			req.append ( pack ('>L',len(indx)) + indx.encode() + pack ('>L',weight))
 
 		# max query time
 		req.append ( pack ('>L', self._maxquerytime) ) 
@@ -556,10 +556,10 @@ class SphinxClient:
 		# per-field weights
 		req.append ( pack ('>L',len(self._fieldweights) ) )
 		for field,weight in list(self._fieldweights.items()):
-			req.append ( pack ('>L',len(field)) + field + pack ('>L',weight) )
+			req.append ( pack ('>L',len(field)) + field.encode() + pack ('>L',weight) )
 
 		# comment
-		req.append ( pack('>L',len(comment)) + comment )
+		req.append ( pack('>L',len(comment)) + comment.encode() )
 
 		# attribute overrides
 		req.append ( pack('>L', len(self._overrides)) )
@@ -580,7 +580,8 @@ class SphinxClient:
 		req.append ( self._select )
 
 		# send query, get response
-		req = ''.join(req)
+		req = b''.join(r if isinstance(r, bytes) else r.encode()
+						for r in req)
 
 		self._reqs.append(req)
 		return
@@ -599,7 +600,7 @@ class SphinxClient:
 		if not sock:
 			return None
 
-		req = ''.join(self._reqs)
+		req = b''.join(self._reqs)
 		length = len(req)+4
 		req = pack('>HHLL', SEARCHD_COMMAND_SEARCH, VER_COMMAND_SEARCH, length, len(self._reqs))+req
 		sock.send(req)
@@ -661,7 +662,7 @@ class SphinxClient:
 				p += length
 				type_ = unpack('>L', response[p:p+4])[0]
 				p += 4
-				attrs.append([attr,type_])
+				attrs.append([attr.decode(),type_])
 
 			result['attrs'] = attrs
 
@@ -732,10 +733,12 @@ class SphinxClient:
 			opts = {}
 		if isinstance(words,str):
 			words = words.encode('utf-8')
+		if isinstance(index,str):
+			index = index.encode('utf-8')
 
 		assert(isinstance(docs, list))
-		assert(isinstance(index, str))
-		assert(isinstance(words, str))
+		assert(isinstance(index, bytes))
+		assert(isinstance(words, bytes))
 		assert(isinstance(opts, dict))
 
 		sock = self._Connect()
@@ -772,13 +775,13 @@ class SphinxClient:
 
 		# options
 		req.append(pack('>L', len(opts['before_match'])))
-		req.append(opts['before_match'])
+		req.append(opts['before_match'].encode('utf-8'))
 
 		req.append(pack('>L', len(opts['after_match'])))
-		req.append(opts['after_match'])
+		req.append(opts['after_match'].encode('utf-8'))
 
 		req.append(pack('>L', len(opts['chunk_separator'])))
-		req.append(opts['chunk_separator'])
+		req.append(opts['chunk_separator'].encode('utf-8'))
 
 		req.append(pack('>L', int(opts['limit'])))
 		req.append(pack('>L', int(opts['around'])))
@@ -788,11 +791,11 @@ class SphinxClient:
 		for doc in docs:
 			if isinstance(doc,str):
 				doc = doc.encode('utf-8')
-			assert(isinstance(doc, str))
+			assert(isinstance(doc, bytes))
 			req.append(pack('>L', len(doc)))
 			req.append(doc)
 
-		req = ''.join(req)
+		req = b''.join(req)
 
 		# send query, get response
 		length = len(req)

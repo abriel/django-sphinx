@@ -431,7 +431,7 @@ class SphinxClient:
 
 		if isinstance(query,str):
 			query = query.encode('utf-8')
-		assert(isinstance(query,str))
+		assert(isinstance(query,bytes))
 
 		req.append(pack('>L', len(query)))
 		req.append(query)
@@ -651,8 +651,8 @@ class SphinxClient:
 			words = words.encode('utf-8')
 
 		assert(isinstance(docs, list))
-		assert(isinstance(index, str))
-		assert(isinstance(words, str))
+		assert(isinstance(index, bytes))
+		assert(isinstance(words, bytes))
 		assert(isinstance(opts, dict))
 
 		sock = self._Connect()
@@ -699,7 +699,7 @@ class SphinxClient:
 		for doc in docs:
 			if isinstance(doc,str):
 				doc = doc.encode('utf-8')
-			assert(isinstance(doc, str))
+			assert(isinstance(doc, bytes))
 			req.append(pack('>L', len(doc)))
 			req.append(doc)
 

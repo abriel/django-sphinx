@@ -288,7 +288,7 @@ class SphinxQuerySet(object):
         return self._clone(**kwargs)
 
     def query(self, string):
-        return self._clone(_query=str(string).encode('utf-8'))
+        return self._clone(_query=string.encode('utf-8'))
 
     def group_by(self, attribute, func, groupsort='@group desc'):
         return self._clone(_groupby=attribute, _groupfunc=func, _groupsort=groupsort)
